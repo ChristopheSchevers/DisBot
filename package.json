@@ -9,6 +9,7 @@
   "author": "Christophe Schevers",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^11.5.1"
+    "discord.js": "^11.5.1",
+    "googleapis": "^39.2.0"
   }
 }
