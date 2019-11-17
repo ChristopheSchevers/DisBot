@@ -12,5 +12,8 @@
   "dependencies": {
     "discord.js": "^11.5.1",
     "googleapis": "^39.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.4"
   }
 }
