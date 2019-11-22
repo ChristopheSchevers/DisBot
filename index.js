@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const {google} = require('googleapis');
 const { prefix, token } = require('./disconfig.json');
 const client = new Discord.Client();
+const keys = require('./credentials.json');
 
 const googclient = connect();
 
@@ -40,8 +41,6 @@ client.login(token);
 
 function connect() {
     console.log('Connected to Google API');
-
-    const keys = require('./credentials.json');
     
     const client = new google.auth.JWT(keys.client_email, null, keys.private_key, ['https://www.googleapis.com/auth/spreadsheets']);
     
@@ -59,8 +58,8 @@ async function search(message, args, client = googclient) {
     const gsapi = google.sheets({version: 'v4', auth: client});   
 
     const opt = {
-        spreadsheetId: '10j-LLoQIdnMLGFUoPfs0hyjUjl13lv1d3ilAsxoNFNE',
-        range: 'Data!A2:E',
+        spreadsheetId: keys.spreadsheet_id,
+        range: 'data_results!A2:E',
     };
     
     let data = await gsapi.spreadsheets.values.get(opt);
@@ -81,20 +80,20 @@ async function update(message, args, client = googclient) {
     const gsapi = google.sheets({version: 'v4', auth: client});
 
     const opt = {
-        spreadsheetId: '10j-LLoQIdnMLGFUoPfs0hyjUjl13lv1d3ilAsxoNFNE',
-        range: 'Data!A2:E',
+        spreadsheetId: keys.spreadsheet_id,
+        range: 'data_store!A2:E',
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
         resource: { values: args }
     };
 
-    await gsapi.spreadsheets.values.append(opt, function(err, res) {
+    await gsapi.spreadsheets.values.append(opt, (err) => {
         if(err) {
             console.log(err);
             message.channel.send('An error has occurred. Please check the console or try again.')
             return;
         }
-        message.channel.send(`New row has been added to the table as col 1: ${args[0][0]}, col 2: ${args[0][1]}, min: ${args[0][2]}, max: ${args[0][3]}, avg: ${args[0][4]}`);
+        message.channel.send(`New row has been added to the table as col 1: ${args[0][0]}, col 2: ${args[0][1]}, value: ${args[0][2]}`);
     });
 
 }
