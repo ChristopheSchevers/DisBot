@@ -25,7 +25,7 @@ client.on('message', message => {
                 reqArr.push(args.slice(1));
                 update(message, reqArr);
             } else {
-                message.channel.send("I don't know this command.\nIn order to retrieve data from the table, please provide 2 argument after the exclamation mark.\nIf you want to add data to the table, please use command '!add' followed by 5 arguments");
+                message.channel.send("I don't know this command.\nIn order to retrieve data from the table, please provide 2 argument after the exclamation mark.\nIf you want to add data to the table, please use command '!add' followed by 3 arguments");
             }
 
         } else {
