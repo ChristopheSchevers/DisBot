@@ -16,6 +16,7 @@ client.on('message', message => {
     if(msg.substring(0,1) == prefix) {
         let args = msg.substring(1).split(' ');
 
+        
         if(args.length <= 6) {
 
             if(args.length == 2) {
@@ -23,7 +24,11 @@ client.on('message', message => {
             } else if(args[0] == 'add') {
                 let reqArr = [];
                 reqArr.push(args.slice(1));
-                update(message, reqArr);
+                updateStore(message, reqArr);
+            } else if (args[0] == 'test') {     // Dev purpose
+                let rq = [];
+                rq.push(args.slice(1));
+                updateResultsSheet(rq);            
             } else {
                 message.channel.send("I don't know this command.\nIn order to retrieve data from the table, please provide 2 argument after the exclamation mark.\nIf you want to add data to the table, please use command '!add' followed by 3 arguments");
             }
@@ -54,34 +59,66 @@ function connect() {
     return client;
 }
 
-async function search(message, args, client = googclient) {
-    const gsapi = google.sheets({version: 'v4', auth: client});   
+function search(message, args) {
+    let dataArr = get();
 
-    const opt = {
-        spreadsheetId: keys.spreadsheet_id,
-        range: 'data_results!A2:E',
-    };
-    
-    let data = await gsapi.spreadsheets.values.get(opt);
-    let dataArr = data.data.values;
-    
     for(i in dataArr) {
         if(dataArr[i][0] == args[0] && dataArr[i][1] == args[1]) {
             let res_arr = dataArr[i];
             return message.channel.send(`Min: ${res_arr[2]}, max: ${res_arr[3]}, avg: ${res_arr[4]}`);
         }        
     }
-
+    
     message.channel.send(`No records were found with ${args[0]} ${args[1]}`);
 }
 
-async function update(message, args, client = googclient) {   
+function updateResultsSheet(args) {
+    // Data kolommen ophalen
+    let store_items = get(1);
+    console.log(store_items);
+
+    // Bestaan zoekopdracht checken
+        // Bestaat -> resultaat in array
+            // startpositie 1ste resultaat + lengte array -> nieuwe range min, max, avg van resultaat
+        // Bestaat niet -> nieuwe rij met min, max, avg code
+    let res_arr = [];
+
+    for (i in store_items) {
+        if (store_items[i][0] == args[0] && store_items[i][1] == args[1]) {
+            res_arr.push(store_items[i]);
+        }
+    }
+
+    console.log(res_arr);
+
+    // async get
+
+    // async post
+
+    // async update
+}
+
+async function get(target = 0, client = googclient) {
+    const gsapi = google.sheets({version: 'v4', auth: client});
+    const data_range = (!target) ? 'data_results!A2:E' : "data_store!A2:C";
+    
+    const opt = {
+        spreadsheetId: keys.spreadsheet_id,
+        range: data_range,
+    };
+    
+    let data = await gsapi.spreadsheets.values.get(opt);
+    console.log(data.data.values);
+    return data.data.values;    
+}
+
+async function updateStore(message, args, client = googclient) {   
 
     const gsapi = google.sheets({version: 'v4', auth: client});
 
     const opt = {
         spreadsheetId: keys.spreadsheet_id,
-        range: 'data_store!A2:E',
+        range: 'data_store!A2:C',
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
         resource: { values: args }
