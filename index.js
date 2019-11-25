@@ -26,9 +26,7 @@ client.on('message', message => {
                 reqArr.push(args.slice(1));
                 updateStore(message, reqArr);
             } else if (args[0] == 'test') {     // Dev purpose
-                let rq = [];
-                rq.push(args.slice(1));
-                updateResultsSheet(rq);            
+                updateResultsSheet(args.slice(1));            
             } else {
                 message.channel.send("I don't know this command.\nIn order to retrieve data from the table, please provide 2 argument after the exclamation mark.\nIf you want to add data to the table, please use command '!add' followed by 3 arguments");
             }
@@ -60,7 +58,7 @@ function connect() {
 }
 
 function search(message, args) {
-    let dataArr = get();
+    let dataArr = getData();
 
     for(i in dataArr) {
         if(dataArr[i][0] == args[0] && dataArr[i][1] == args[1]) {
@@ -72,10 +70,17 @@ function search(message, args) {
     message.channel.send(`No records were found with ${args[0]} ${args[1]}`);
 }
 
-function updateResultsSheet(args) {
+async function updateResultsSheet(args, client = googclient) {
     // Data kolommen ophalen
-    let store_items = get(1);
-    console.log(store_items);
+    const gsapi = google.sheets({version: 'v4', auth: client});
+    
+    const opt = {
+        spreadsheetId: keys.spreadsheet_id,
+        range: 'data_store!A2:C',
+    };
+    
+    let data = await gsapi.spreadsheets.values.get(opt);
+    let store_items = data.data.values;
 
     // Bestaan zoekopdracht checken
         // Bestaat -> resultaat in array
@@ -88,8 +93,26 @@ function updateResultsSheet(args) {
             res_arr.push(store_items[i]);
         }
     }
-
     console.log(res_arr);
+
+    const opt2 = {
+        spreadsheetId: keys.spreadsheet_id,
+        range: 'data_results!A2:E'
+    }
+
+    let data2 = await gsapi.spreadsheets.values.get(opt2);
+    let result_items = data2.data.values;
+
+    for (i in result_items) {
+        let start = i + 2;
+
+        if (result_items[i][0] == args[0] && result_items[i][1] == args[1]) {
+            console.log('exists');
+        } else {
+            let range = [start, store_items.length == 1 ? start : start + store_items.length - 1]
+            updateResults(args, range);
+        }
+    }
 
     // async get
 
@@ -98,17 +121,15 @@ function updateResultsSheet(args) {
     // async update
 }
 
-async function get(target = 0, client = googclient) {
+async function getData(client = googclient) {
     const gsapi = google.sheets({version: 'v4', auth: client});
-    const data_range = (!target) ? 'data_results!A2:E' : "data_store!A2:C";
     
     const opt = {
         spreadsheetId: keys.spreadsheet_id,
-        range: data_range,
+        range: 'data_results!A2:E',
     };
     
     let data = await gsapi.spreadsheets.values.get(opt);
-    console.log(data.data.values);
     return data.data.values;    
 }
 
@@ -122,6 +143,35 @@ async function updateStore(message, args, client = googclient) {
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
         resource: { values: args }
+    };
+
+    await gsapi.spreadsheets.values.append(opt, (err) => {
+        if(err) {
+            console.log(err);
+            message.channel.send('An error has occurred. Please check the console or try again.')
+            return;
+        }
+        message.channel.send(`New row has been added to the table as col 1: ${args[0][0]}, col 2: ${args[0][1]}, value: ${args[0][2]}`);
+    });
+
+}
+
+async function updateResults(args, range, client = googclient) {   
+
+    const gsapi = google.sheets({version: 'v4', auth: client});
+
+    const opt = {
+        spreadsheetId: keys.spreadsheet_id,
+        range: 'data_results!A2:E',
+        valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS',
+        resource: { values: [
+            args[0],
+            args[1],
+            `=AVERAGE(data_store!C${range[0]}:C${range[1]})`,
+            `=MIN(data_store!C${range[0]}:C${range[1]})`,
+            `=MAX(data_store!C${range[0]}:C${range[1]})`
+        ] }
     };
 
     await gsapi.spreadsheets.values.append(opt, (err) => {
