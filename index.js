@@ -71,7 +71,7 @@ function search(message, args) {
 }
 
 async function updateResultsSheet(args, client = googclient) {
-    // Data kolommen ophalen
+    
     const gsapi = google.sheets({version: 'v4', auth: client});
     
     const opt = {
@@ -81,11 +81,7 @@ async function updateResultsSheet(args, client = googclient) {
     
     let data = await gsapi.spreadsheets.values.get(opt);
     let store_items = data.data.values;
-
-    // Bestaan zoekopdracht checken
-        // Bestaat -> resultaat in array
-            // startpositie 1ste resultaat + lengte array -> nieuwe range min, max, avg van resultaat
-        // Bestaat niet -> nieuwe rij met min, max, avg code
+    
     let res_arr = [];
 
     for (i in store_items) {
@@ -93,8 +89,7 @@ async function updateResultsSheet(args, client = googclient) {
             res_arr.push(store_items[i]);
         }
     }
-    console.log(res_arr);
-
+    
     const opt2 = {
         spreadsheetId: keys.spreadsheet_id,
         range: 'data_results!A2:E'
@@ -103,22 +98,27 @@ async function updateResultsSheet(args, client = googclient) {
     let data2 = await gsapi.spreadsheets.values.get(opt2);
     let result_items = data2.data.values;
 
-    for (i in result_items) {
-        let start = i + 2;
-
-        if (result_items[i][0] == args[0] && result_items[i][1] == args[1]) {
-            console.log('exists');
-        } else {
-            let range = [start, store_items.length == 1 ? start : start + store_items.length - 1]
-            updateResults(args, range);
+    if (result_items) {
+    
+        for (i in result_items) {
+            
+            if (result_items[i][0] == args[0] && result_items[i][1] == args[1]) {
+                let start = i + 2;
+                let fn_range = [start, res_arr.length == 1 ? start : start + res_arr.length - 1];
+                console.log('exists');
+            } else {
+                let start = result_items.length + 2;
+                let fn_range = [start, start];
+                console.log(fn_range);
+            }
         }
+        
+    } else {
+        let fn_range = res_arr ? [2, res_arr.length + 1] : [2, 2];
+        updateResults(args, fn_range);
+
     }
 
-    // async get
-
-    // async post
-
-    // async update
 }
 
 async function getData(client = googclient) {
@@ -148,7 +148,7 @@ async function updateStore(message, args, client = googclient) {
     await gsapi.spreadsheets.values.append(opt, (err) => {
         if(err) {
             console.log(err);
-            message.channel.send('An error has occurred. Please check the console or try again.')
+            message.channel.send('An error has occurred. Please check the console or try again.');
             return;
         }
         message.channel.send(`New row has been added to the table as col 1: ${args[0][0]}, col 2: ${args[0][1]}, value: ${args[0][2]}`);
@@ -166,21 +166,21 @@ async function updateResults(args, range, client = googclient) {
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
         resource: { values: [
-            args[0],
-            args[1],
-            `=AVERAGE(data_store!C${range[0]}:C${range[1]})`,
-            `=MIN(data_store!C${range[0]}:C${range[1]})`,
-            `=MAX(data_store!C${range[0]}:C${range[1]})`
+            [
+                args[0],
+                args[1],
+                `=AVERAGE(data_store!C${range[0]}:C${range[1]})`,
+                `=MIN(data_store!C${range[0]}:C${range[1]})`,
+                `=MAX(data_store!C${range[0]}:C${range[1]})`
+            ]
         ] }
     };
 
     await gsapi.spreadsheets.values.append(opt, (err) => {
         if(err) {
             console.log(err);
-            message.channel.send('An error has occurred. Please check the console or try again.')
             return;
         }
-        message.channel.send(`New row has been added to the table as col 1: ${args[0][0]}, col 2: ${args[0][1]}, value: ${args[0][2]}`);
     });
 
 }
