@@ -87,8 +87,11 @@ async function updateResultsSheet(args, client = googclient) {
     for (i in store_items) {
         if (store_items[i][0] == args[0] && store_items[i][1] == args[1]) {
             res_arr.push(store_items[i]);
+            var res_index = Number(i) + 2;
         }
     }
+
+    let end = res_arr.length > 1 ? res_arr.length - 1 : res_index;
     
     const opt2 = {
         spreadsheetId: keys.spreadsheet_id,
@@ -103,19 +106,21 @@ async function updateResultsSheet(args, client = googclient) {
         for (i in result_items) {
             
             if (result_items[i][0] == args[0] && result_items[i][1] == args[1]) {
-                let start = i + 2;
-                let fn_range = [start, res_arr.length == 1 ? start : start + res_arr.length - 1];
+                let start = Number(i) + 2;
+                let fn_range = [start, end];
                 console.log('exists');
-            } else {
-                let start = result_items.length + 2;
-                let fn_range = [start, start];
-                console.log(fn_range);
+                return modifyResultsRow(args, fn_range);
             }
+            
         }
+        
+        let fn_range = [res_index, end];
+        console.log('does not exist');
+        return updateResults(args, fn_range);
         
     } else {
         let fn_range = res_arr ? [2, res_arr.length + 1] : [2, 2];
-        updateResults(args, fn_range);
+        return updateResults(args, fn_range);
 
     }
 
@@ -165,18 +170,42 @@ async function updateResults(args, range, client = googclient) {
         range: 'data_results!A2:E',
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
-        resource: { values: [
-            [
-                args[0],
-                args[1],
-                `=AVERAGE(data_store!C${range[0]}:C${range[1]})`,
-                `=MIN(data_store!C${range[0]}:C${range[1]})`,
-                `=MAX(data_store!C${range[0]}:C${range[1]})`
-            ]
-        ] }
+        resource: { values: [[
+            args[0],
+            args[1],
+            `=FLOOR.PRECISE(AVERAGE(data_store!C${range[0]}:C${range[1]});0,01)`,
+            `=MIN(data_store!C${range[0]}:C${range[1]})`,
+            `=MAX(data_store!C${range[0]}:C${range[1]})`
+        ]]}
     };
 
     await gsapi.spreadsheets.values.append(opt, (err) => {
+        if(err) {
+            console.log(err);
+            return;
+        }
+    });
+
+}
+
+async function modifyResultsRow(args, range, client = googclient) {
+
+    const gsapi = google.sheets({version: 'v4', auth: client});
+
+    const opt = {
+        spreadsheetId: keys.spreadsheet_id,
+        range: `data_results!A${range[0]}`,
+        valueInputOption: 'USER_ENTERED',
+        resource: { values: [[
+            args[0],
+            args[1],
+            `=FLOOR.PRECISE(AVERAGE(data_store!C${range[0]}:C${range[1]});0,01)`,
+            `=MIN(data_store!C${range[0]}:C${range[1]})`,
+            `=MAX(data_store!C${range[0]}:C${range[1]})`
+        ]]}
+    };
+
+    await gsapi.spreadsheets.values.update(opt, (err) => {
         if(err) {
             console.log(err);
             return;
