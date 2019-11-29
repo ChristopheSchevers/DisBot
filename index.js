@@ -15,7 +15,6 @@ client.on('message', message => {
     
     if(msg.substring(0,1) == prefix) {
         let args = msg.substring(1).split(' ');
-
         
         if(args.length <= 6) {
 
@@ -84,6 +83,7 @@ async function updateResultsSheet(args, client = googclient) {
     
     let res_arr = [];
 
+    // index van eerste resultaat verkrijgen en opslaan
     for (i in store_items) {
         if (store_items[i][0] == args[0] && store_items[i][1] == args[1]) {
             res_arr.push(store_items[i]);
@@ -91,7 +91,7 @@ async function updateResultsSheet(args, client = googclient) {
         }
     }
 
-    let end = res_arr.length > 1 ? res_arr.length - 1 : res_index;
+    let end = res_arr.length > 1 ? res_index + res_arr.length - 1 : res_index;
     
     const opt2 = {
         spreadsheetId: keys.spreadsheet_id,
@@ -106,10 +106,11 @@ async function updateResultsSheet(args, client = googclient) {
         for (i in result_items) {
             
             if (result_items[i][0] == args[0] && result_items[i][1] == args[1]) {
-                let start = Number(i) + 2;
-                let fn_range = [start, end];
+                let row_index = Number(i) + 2;
+                let fn_range = [res_index, end];
                 console.log('exists');
-                return modifyResultsRow(args, fn_range);
+                console.log(fn_range);
+                return modifyResultsRow(args, row_index, fn_range);
             }
             
         }
@@ -188,13 +189,13 @@ async function updateResults(args, range, client = googclient) {
 
 }
 
-async function modifyResultsRow(args, range, client = googclient) {
+async function modifyResultsRow(args, row, range, client = googclient) {
 
     const gsapi = google.sheets({version: 'v4', auth: client});
 
     const opt = {
         spreadsheetId: keys.spreadsheet_id,
-        range: `data_results!A${range[0]}`,
+        range: `data_results!A${row}`,
         valueInputOption: 'USER_ENTERED',
         resource: { values: [[
             args[0],
