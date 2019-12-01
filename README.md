@@ -1,1 +1,3 @@
 # DisBot
+
+Documentation coming soon
