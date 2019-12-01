@@ -20,14 +20,14 @@ client.on('message', message => {
 
         if(args.length <= 6) {
             if(args.length == 2) {
+                updateResultsSheet();
                 search(message, args);
             } else if(args[0] == 'add') {
                 let reqArr = [];
                 reqArr.push(args.slice(1));
                 if(reqArr[0].length == 3) {
                     updateStore(message, reqArr);
-                    updateResultsSheet(reqArr[0]);
-                    // setTimeout(function(){updateResultsSheet(reqArr[0])}, 1000);
+                    setTimeout(function(){updateResultsSheet()}, 1000);
                 } else {
                     message.channel.send("I need 3 arguments in order to store a new record. A value for column A, a value for column B and a number.");
                 }
@@ -85,20 +85,6 @@ function storeSearch(arr, args, item) {
     return res;
 }
 
-function updateResultsLoop(arr1, arr2) {
-    for (row in arr2) {
-        let args = [arr2[row][0],arr2[row][1]],
-            row_index = Number(row) + 2;
-            res_arr = storeSearch(arr1, args, 'arr'),
-            res_index = storeSearch(arr1, args, 'index'),
-            end = res_arr.length > 1 ? (res_index + res_arr.length - 1) : res_index,
-            fn_range = [res_index, end];
-
-        console.log(args, row_index, fn_range);
-        modifyResultsRow(args, row_index, fn_range);
-    }
-}
-
 function updateResultsSheet() {
     let store_items = getData('store');
     store_items.then(function(res_store){
@@ -112,31 +98,17 @@ function updateResultsSheet() {
 
             arg1 = res_store[row][0];
             arg2 = res_store[row][1];
+            let start = storeSearch(res_store, [arg1, arg2], 'index'),
+                match_arr = storeSearch(res_store, [arg1, arg2], 'arr'),
+                end = match_arr.length > 1 ? (start + match_arr.length -1) : start,
+                avg = `=FLOOR.PRECISE(AVERAGE(data_store!C${start}:C${end});0,01)`,
+                min = `=MIN(data_store!C${start}:C${end})`,
+                max = `=MAX(data_store!C${start}:C${end})`;
+            
+            new_results.push([arg1, arg2, avg, min, max]);
         }
-        // let res_arr = storeSearch(res_store, args, 'arr'),
-        //     res_index = storeSearch(res_store, args, 'index'),
-        //     end = res_arr.length > 1 ? (res_index + res_arr.length - 1) : res_index,
-        //     result_items = getData();
 
-        // result_items.then(function(res_results){
-        //     if (res_results) {    
-        //         let match = 0,
-        //             fn_range = [res_index, end];
-                
-        //         for (i in res_results) {
-        //             if (res_results[i][0] == args[0] && res_results[i][1] == args[1])
-        //                 match = 1;
-        //         }
-
-        //         if (!match)
-        //             updateResults(args, fn_range);
-
-        //         setTimeout(function(){updateResultsLoop(res_store, res_results)}, 1000);
-        //     } else {
-        //         let fn_range = res_arr ? [2, res_arr.length + 1] : [2, 2];
-        //         return updateResults(args, fn_range);
-        //     }            
-        // });    
+        modifyResultsSheet(new_results);
     });
 }
 
@@ -173,43 +145,13 @@ async function updateStore(message, args, client = googclient) {
 
 }
 
-async function updateResults(args, range, client = googclient) {  
+async function modifyResultsSheet(vals, client = googclient) {
     const gsapi = google.sheets({version: 'v4', auth: client}),
         opt = {
             spreadsheetId: keys.spreadsheet_id,
-            range: 'data_results!A2:E',
+            range: `data_results!A2`,
             valueInputOption: 'USER_ENTERED',
-            insertDataOption: 'INSERT_ROWS',
-            resource: { values: [[
-                args[0],
-                args[1],
-                `=FLOOR.PRECISE(AVERAGE(data_store!C${range[0]}:C${range[1]});0,01)`,
-                `=MIN(data_store!C${range[0]}:C${range[1]})`,
-                `=MAX(data_store!C${range[0]}:C${range[1]})`
-            ]]}
-        };
-
-    await gsapi.spreadsheets.values.append(opt, (err) => {
-        if(err) {
-            console.log(err);
-            return;
-        }
-    });
-}
-
-async function modifyResultsRow(args, row, range, client = googclient) {
-    const gsapi = google.sheets({version: 'v4', auth: client}),
-        opt = {
-            spreadsheetId: keys.spreadsheet_id,
-            range: `data_results!A${row}`,
-            valueInputOption: 'USER_ENTERED',
-            resource: { values: [[
-                args[0],
-                args[1],
-                `=FLOOR.PRECISE(AVERAGE(data_store!C${range[0]}:C${range[1]});0,01)`,
-                `=MIN(data_store!C${range[0]}:C${range[1]})`,
-                `=MAX(data_store!C${range[0]}:C${range[1]})`
-            ]]}
+            resource: { values: vals }
         };
 
     await gsapi.spreadsheets.values.update(opt, (err) => {
