@@ -1,8 +1,8 @@
-const Discord = require('discord.js');
-const {google} = require('googleapis');
-const { prefix, token } = require('./disconfig.json');
-const client = new Discord.Client();
-const keys = require('./credentials.json');
+const Discord = require('discord.js'),
+    {google} = require('googleapis'),
+    { prefix, token } = require('./disconfig.json'),
+    client = new Discord.Client(),
+    keys = require('./credentials.json');
 
 const googclient = connect();
 
@@ -21,18 +21,21 @@ client.on('message', message => {
         if(args.length <= 6) {
             if(args.length == 2) {
                 updateResultsSheet();
-                search(message, args);
+                setTimeout(function(){search(message, args)}, 1000);
             } else if(args[0] == 'add') {
                 let reqArr = [];
                 reqArr.push(args.slice(1));
                 if(reqArr[0].length == 3) {
-                    updateStore(message, reqArr);
-                    setTimeout(function(){updateResultsSheet()}, 1000);
+                    const store_updated = updateStore(message, reqArr);
+                    store_updated.then(function(res) {
+                        if(res)
+                            setTimeout(function(){updateResultsSheet()}, 2000);
+                    });
                 } else {
                     message.channel.send("I need 3 arguments in order to store a new record. A value for column A, a value for column B and a number.");
                 }
             } else {
-                message.channel.send("I don't know this command.\nIn order to retrieve data from the table, please provide 2 argument after the exclamation mark.\nIf you want to add data to the table, please use command '!add' followed by 3 arguments");
+                message.channel.send("I don't know this command.\nIn order to retrieve data from the table, please provide 2 arguments after the exclamation mark.\nIf you want to add data to the table, please use command '!add' followed by 3 arguments");
             }
         } else {
             message.channel.send("Oops! Your request seems too long. I only store data in 5 columns.");
@@ -107,7 +110,6 @@ function updateResultsSheet() {
             
             new_results.push([arg1, arg2, avg, min, max]);
         }
-
         modifyResultsSheet(new_results);
     });
 }
@@ -124,7 +126,10 @@ async function getData(db = 0, client = googclient) {
     return data.data.values;    
 }
 
-async function updateStore(message, args, client = googclient) { 
+async function updateStore(message, args, client = googclient) {
+    if (isNaN(Number(args[0][2])))
+        return message.channel.send(`The last argument, in this case "${args[0][2]}", should be a number.`);
+
     const gsapi = google.sheets({version: 'v4', auth: client}),
         opt = {
             spreadsheetId: keys.spreadsheet_id,
@@ -142,7 +147,7 @@ async function updateStore(message, args, client = googclient) {
         }
         message.channel.send(`New row has been added to the table as col A: ${args[0][0]}, col B: ${args[0][1]}, value: ${args[0][2]}`);
     });
-
+    return 1;
 }
 
 async function modifyResultsSheet(vals, client = googclient) {
