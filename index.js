@@ -99,33 +99,44 @@ function updateResultsLoop(arr1, arr2) {
     }
 }
 
-function updateResultsSheet(args) {
+function updateResultsSheet() {
     let store_items = getData('store');
     store_items.then(function(res_store){
-        let res_arr = storeSearch(res_store, args, 'arr'),
-            res_index = storeSearch(res_store, args, 'index'),
-            end = res_arr.length > 1 ? (res_index + res_arr.length - 1) : res_index,
-            result_items = getData();
+        let arg1 = null, 
+            arg2 = null,
+            new_results = [];
 
-        result_items.then(function(res_results){
-            if (res_results) {    
-                let match = 0,
-                    fn_range = [res_index, end];
+        for (row in res_store) {
+            if (res_store[row][0] == arg1 && res_store[row][1] == arg2)
+                continue;
+
+            arg1 = res_store[row][0];
+            arg2 = res_store[row][1];
+        }
+        // let res_arr = storeSearch(res_store, args, 'arr'),
+        //     res_index = storeSearch(res_store, args, 'index'),
+        //     end = res_arr.length > 1 ? (res_index + res_arr.length - 1) : res_index,
+        //     result_items = getData();
+
+        // result_items.then(function(res_results){
+        //     if (res_results) {    
+        //         let match = 0,
+        //             fn_range = [res_index, end];
                 
-                for (i in res_results) {
-                    if (res_results[i][0] == args[0] && res_results[i][1] == args[1])
-                        match = 1;
-                }
+        //         for (i in res_results) {
+        //             if (res_results[i][0] == args[0] && res_results[i][1] == args[1])
+        //                 match = 1;
+        //         }
 
-                if (!match)
-                    updateResults(args, fn_range);
+        //         if (!match)
+        //             updateResults(args, fn_range);
 
-                setTimeout(function(){updateResultsLoop(res_store, res_results)}, 1000);
-            } else {
-                let fn_range = res_arr ? [2, res_arr.length + 1] : [2, 2];
-                return updateResults(args, fn_range);
-            }            
-        });    
+        //         setTimeout(function(){updateResultsLoop(res_store, res_results)}, 1000);
+        //     } else {
+        //         let fn_range = res_arr ? [2, res_arr.length + 1] : [2, 2];
+        //         return updateResults(args, fn_range);
+        //     }            
+        // });    
     });
 }
 
