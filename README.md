@@ -57,7 +57,7 @@ Then **Create Credentials**. Call the API from a **Webserver** and select **Appl
 
 Create a service account and add the **Editor** role under **Project** of the dropdown menu. Make sure you'll receive a **JSON** file. Save this .json file in your project folder with the name **credentials.json**.
 
-In your browser, go to your **Google Spreadsheet** and get the id from the URL. It's the string immediately following *https://docs.google.com/spreadsheets/d/* til the next slash. Go back to your **credentials.json** file and add the following property: 
+In your browser, go to your **Google Spreadsheet** and get the id from the URL. It's the string immediately following *'...docs.google.com/spreadsheets/d/'* til the next slash. Go back to your **credentials.json** file and add the following property: 
 
 ```json
 {
@@ -82,6 +82,8 @@ Enjoy!
 
 ---
 
-With creating this bot I consulted these tutorials:
-[Discord.js by DesignCourse.](#https://youtu.be/We2ijSkByw0)
-[Google Sheets API by Learn Google Spreadsheets.](#https://youtu.be/MiPpQzW_ya0)
+While creating this bot I consulted these tutorials:
+
+[Discord.js by DesignCourse.](https://youtu.be/We2ijSkByw0)
+
+[Google Sheets API by Learn Google Spreadsheets.](https://youtu.be/MiPpQzW_ya0)
