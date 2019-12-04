@@ -76,6 +76,8 @@ With your **Google Spreadsheet** open in the browser, look for **Tools** in de m
 
 In your project folder you find a folder **google-scripts**. Add these files to the **Google Apps Script** without *.example* in their names. Make sure to save each file.
 
+After this open the **CreateChangeEvent.gs** file in Google Scripts and run this code (the **play button** right under the upper toolbar). This will create the onChange trigger and will enable your spreadsheet to get sorted automatically.
+
 
 
 Enjoy!
