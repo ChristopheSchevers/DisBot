@@ -128,7 +128,9 @@ function topAverages(message, target, amount = 5) {
                 arr.push([res_results[row][0], res_results[row][2]]);
         }
 
-        let res_arr = arr.sort(Comparator).slice(0,amount),
+        let res_arr = arr.sort(Comparator).slice(0,amount).sort(function(a, b) {
+            return b[1] - a[1];
+        }),
             res_str = '';
 
         for (row in res_arr) {
