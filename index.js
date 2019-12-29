@@ -20,8 +20,12 @@ client.on('message', message => {
 
         if(args.length <= 6) {
             if(args.length == 2) {
-                updateResultsSheet();
-                setTimeout(function(){search(message, args)}, 1000);
+                if(args[0] == 'counter') {
+                    topAverages(message, args[1]);
+                } else {
+                    updateResultsSheet();
+                    setTimeout(function(){search(message, args)}, 1000);
+                }
             } else if(args[0] == 'add') {
                 let reqArr = [];
                 reqArr.push(args.slice(1));
@@ -112,6 +116,33 @@ function updateResultsSheet() {
         }
         modifyResultsSheet(new_results);
     });
+}
+
+function topAverages(message, target, amount = 5) {
+    let res_items = getData();
+    res_items.then(function(res_results){
+        let arr = [];
+
+        for (row in res_results) {
+            if (res_results[row][1] == target)
+                arr.push([res_results[row][0], res_results[row][2]]);
+        }
+
+        let res_arr = arr.sort(Comparator).splice(0,amount),
+            res_str = '';
+
+        for (row in res_arr) {
+            res_str += `avg: ${res_arr[row][1]} with ${res_arr[row][0]}\n`;
+        }
+
+        return message.channel.send(`Top averages against ${target}:\n${res_str}`);
+    });
+
+    function Comparator(a,b) {
+        if (a[1] < b[1]) return 1;
+        if (a[1] > b[1]) return -1;
+        return 0;
+    }
 }
 
 async function getData(db = 0, client = googclient) {
