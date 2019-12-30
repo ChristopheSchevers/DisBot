@@ -128,9 +128,7 @@ function topAverages(message, target, amount = 5) {
                 arr.push([res_results[row][0], res_results[row][2]]);
         }
 
-        let res_arr = arr.sort(Comparator).slice(0,amount).sort(function(a, b) {
-            return b[1] - a[1];
-        }),
+        let res_arr = arr.slice(0,amount).sort(Comparator),
             res_str = '';
 
         for (row in res_arr) {
@@ -141,9 +139,12 @@ function topAverages(message, target, amount = 5) {
     });
 
     function Comparator(a,b) {
-        if (a[1] < b[1]) return 1;
-        if (a[1] > b[1]) return -1;
-        return 0;
+        var x = parseInt(a[1], 10);
+        var y = parseInt(b[1], 10);
+
+        if (x === 0 && y === 0)
+            return 1 / x - 1 / y || 0;
+        else return y - x;
     }
 }
 
